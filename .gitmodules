@@ -1,0 +1,3 @@
+[submodule "MultiplePerspectives/Dependencies/Framework"]
+	path = MultiplePerspectives/Dependencies/Framework
+	url = https://github.com/scsewell/UnityFramework
