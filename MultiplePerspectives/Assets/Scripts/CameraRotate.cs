@@ -38,7 +38,7 @@ public class CameraRotate : MonoBehaviour
     {
         m_cam = GetComponentInChildren<Camera>(true);
 
-        m_currentZoom = 0;
+        m_currentZoom = 0.5f;
         m_targetZoom = m_currentZoom;
     }
 
