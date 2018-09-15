@@ -23,11 +23,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _CityLights:
-        m_Texture: {fileID: 2800000, guid: 93c4fbbf1610a894b8f314794db78c6d, type: 3}
+        m_Texture: {fileID: 2800000, guid: aca34782fc6248940b29d39fdcfd73c7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Clouds:
-        m_Texture: {fileID: 2800000, guid: 71b3d4e61affccf40a0f4221873f3008, type: 3}
+        m_Texture: {fileID: 2800000, guid: 9648dce10a6af254db7bb57370b90d33, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -40,6 +40,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _DetailNormalMap:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailTex:
+        m_Texture: {fileID: 2800000, guid: 43f68a13e2320db438042ba90dc1aa91, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
@@ -67,7 +71,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecularMap:
-        m_Texture: {fileID: 2800000, guid: 3d11ee4d4744aef4ea11c16efaf53e3a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 627033fda98924f43bdf4c49bb0f0936, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _VelocityField:
@@ -77,6 +81,7 @@ Material:
     m_Floats:
     - _AtmosphereIntesity: 0.5
     - _BumpScale: 0.5
+    - _CloudDriftSpeed: 0.015
     - _CloudSpeed: 0.099
     - _CloudsIntensity: 1
     - _Cutoff: 0.5

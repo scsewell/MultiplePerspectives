@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe39ee8b06f759449bb1a5290433101, type: 3}
+  m_Name: Earth
+  m_EditorClassIdentifier: 
+  m_hdrExposure: 0.8
+  m_waveLength: {x: 0.65, y: 0.57, z: 0.5}
+  m_sunBrightness: 16.5
+  m_kr: 0.005
+  m_km: 0.0005
+  m_g: -0.99
+  m_outerScaleFactor: 1.015
+  m_scaleDepth: 0.25
+  m_sampleCount: 4
+  m_atmosphereIntensity: 0.5
+  m_nightIntensity: 0.995
+  m_diffuse: {fileID: 2800000, guid: 20ad1f8bdc7f1ea479e2516b67c929b6, type: 3}
+  m_specular: {fileID: 2800000, guid: 627033fda98924f43bdf4c49bb0f0936, type: 3}
+  m_specularColor: {r: 0.7254902, g: 0.7176471, b: 0.6745098, a: 1}
+  m_glossiness: 0.6
+  m_cityLights: {fileID: 2800000, guid: aca34782fc6248940b29d39fdcfd73c7, type: 3}
+  m_cityLightsColor: {r: 3.538347, g: 2.5009258, b: 1.4264541, a: 1}
+  m_clouds: {fileID: 2800000, guid: 9648dce10a6af254db7bb57370b90d33, type: 3}
+  m_cloudIntenstiy: 1
+  m_cloudDriftSpeed: 0.015
+  m_cloudVelocity: {fileID: 2800000, guid: 7e0ef0aa95487134382282325550495d, type: 3}
+  m_cloudVelocityScale: 0.045
+  m_cloudTimeScale: 4
+  m_cloudSamples: 2

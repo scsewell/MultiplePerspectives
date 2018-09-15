@@ -3,29 +3,77 @@
 
 // See original article for details: https://developer.nvidia.com/gpugems/GPUGems2/gpugems2_chapter16.html
 
-float3 v3Translate;         // The objects world pos
-float3 v3LightPos;          // The direction vector to the light source
-float3 v3InvWavelength;     // 1 / pow(wavelength, 4) for the red, green, and blue channels
-float fOuterRadius;         // The outer (atmosphere) radius
-float fOuterRadius2;        // fOuterRadius^2
-float fInnerRadius;         // The inner (planetary) radius
-float fInnerRadius2;        // fInnerRadius^2
-float fKrESun;              // Kr * ESun
-float fKmESun;              // Km * ESun
-float fKr4PI;               // Kr * 4 * PI
-float fKm4PI;               // Km * 4 * PI
-float fScale;               // 1 / (fOuterRadius - fInnerRadius)
-float fScaleDepth;          // The scale depth (i.e. the altitude at which the atmosphere's average density is found)
-float fScaleOverScaleDepth; // fScale / fScaleDepth
-float fHdrExposure;         // HDR exposure
-float g;                    // The Mie phase asymmetry factor
-float g2;                   // The Mie phase asymmetry factor squared
-float sampleCount;          // The number of samples to use
+float3 _CamPos;             // The camera position in local space
+float3 _LightPos;           // The light direciton in local space
+float3 _InvWavelength;      // 1 / pow(wavelength, 4) for the red, green, and blue channels
+float3 _ScatterScale;
+float3 _FrontColorScale;
+float _KrESun;              // Kr * ESun
+float _KmESun;              // Km * ESun
+float _OuterRadius;         // The outer (atmosphere) radius
+float _OuterRadius2;        // the outer radius squared
+float _InnerRadius;         // The inner (planetary) radius
+float _InnerRadius2;        // The inner radius squared
+float _Scale;               // 1 / (outerRadius - innerRadius)
+float _ScaleDepth;          // The scale depth (i.e. the altitude at which the atmosphere's average density is found)
+float _ScaleOverScaleDepth; // scale / scaleDepth
+float _HdrExposure;         // HDR exposure
+float _G;                   // The Mie phase asymmetry factor
+float _G2;                  // The Mie phase asymmetry factor squared
+float _SampleCount;         // The number of samples to use
+
+
+#define ATMOSPHERICS_SETUP  float camHeight = length(camPos);               \
+float camHeight2 = camHeight * camHeight;                                   \
+float3 ray = pos - camPos;                                                  \
+float far = length(ray);                                                    \
+ray /= far;                                                                 \
+float b = 2.0 * dot(camPos, ray); /* Calculate the closest intersection of the ray from camera with the outer atmosphere */ \
+float c = camHeight2 - _OuterRadius2;                                       \
+float det = max(0.0, mad(b, b, -4 * c));                                    \
+float near = 0.5 * (-b - sqrt(det));                                        \
+float3 start = mad(near, ray, camPos); /* Calculate the ray's start and end positions in the atmosphere */  \
+far -= near;                                                                \
+
+#define ATMOSPHERICS_LOOP_START float sampleLength = far / _SampleCount;    \
+float scaledLength = sampleLength * _Scale;                                 \
+float3 sampleRay = ray * sampleLength;                                      \
+float3 samplePoint = mad(sampleRay, 0.5, start);                            \
+float3 frontColor = 0;                                                      \
+float3 attenuation;                                                         \
+for (int s = 0;  s< int(_SampleCount); s++) {                               \
+    float height = length(samplePoint);                                     \
+    float depth = exp(_ScaleOverScaleDepth * (_InnerRadius - height));      \
+
+#define ATMOSPHERICS_LOOP_END samplePoint += sampleRay;                     \
+    attenuation = exp(-scatter * _ScatterScale);                            \
+    frontColor += attenuation * depth * scaledLength;                       \
+}                                                                           \
 
 float Scale(float fCos)
 {
-    float x = 1.0 - fCos;
-    return 0.25 * exp(-0.00287 + x * (0.459 + x * (3.83 + x * (-6.80 + x * 5.25))));
+    float x0 = 1.0 - fCos;
+    float x1 = mad(x0, 5.25, -6.80);
+    float x2 = mad(x0, x1, 3.83);
+    float x3 = mad(x0, x2, 0.459);
+    float x4 = mad(x0, x3, -0.00287);
+    return 0.25 * exp(x4);
+}
+
+half3 ComputeSurfaceAtmospherics(float3 localPos, float3 camPos)
+{
+    float3 pos = localPos * _InnerRadius;
+    ATMOSPHERICS_SETUP
+    float fDepth = exp((_InnerRadius - _OuterRadius) / _ScaleDepth);
+    float camAngle = dot(-ray, pos) / length(pos);
+    float lightAngle = dot(_LightPos, pos) / length(pos);
+    float camScale = Scale(camAngle);
+    float camOffset = fDepth * camScale;
+    float temp = Scale(lightAngle) + camScale;
+    ATMOSPHERICS_LOOP_START
+    float scatter = mad(fDepth, temp, -camOffset);
+    ATMOSPHERICS_LOOP_END
+    return 1.0 - exp(mad(attenuation, 0.25, frontColor * _FrontColorScale) * -_HdrExposure);
 }
 
 // Gets the Mie scattering phase.
@@ -40,35 +88,24 @@ float RayleighPhase(float fCos2)
     return mad(fCos2, 0.75, 0.75);
 }
 
-#define ATMOSPHERICS_SETUP float3 camPos = _WorldSpaceCameraPos - v3Translate; /* Get the camera position */   \
-float camHeight = length(camPos);                                                   \
-float camHeight2 = camHeight * camHeight;                                           \
-float3 pos = mul(unity_ObjectToWorld, v.vertex).xyz - v3Translate; /* Get the ray from the camera to the vertex and its length (which is the far point of the ray passing through the atmosphere) */    \
-float3 ray = pos - camPos;                                                          \
-float far = length(ray);                                                            \
-ray /= far;                                                                         \
-float B = 2.0 * dot(camPos, ray); /* Calculate the closest intersection of the ray with the outer atmosphere (which is the near point of the ray passing through the atmosphere) */ \
-float C = camHeight2 - fOuterRadius2;                                               \
-float det = max(0.0, mad(B, B, -4 * C));                                            \
-float near = 0.5 * (-B - sqrt(det));                                                \
-float3 start = mad(near, ray, camPos); /* Calculate the ray's start and end positions in the atmosphere, then calculate its scattering offset */    \
-far -= near;                                                                        \
-
-
-#define ATMOSPHERICS_LOOP_START float sampleLength = far / sampleCount; /* Initialize the scattering loop variables */  \
-float scaledLength = sampleLength * fScale;                                         \
-float3 sampleRay = ray * sampleLength;                                              \
-float3 samplePoint = mad(sampleRay, 0.5, start);                                    \
-float3 frontColor = float3(0.0, 0.0, 0.0); /* Now loop through the sample rays */   \
-float3 attenuation;                                                                 \
-for (int i = 0; i< int(sampleCount); i++) {                                         \
-    float height = length(samplePoint);                                             \
-    float depth = exp(fScaleOverScaleDepth * (fInnerRadius - height));              \
-
-
-#define ATMOSPHERICS_LOOP_END samplePoint += sampleRay;                             \
-    attenuation = exp(-scatter * mad(v3InvWavelength, fKr4PI, fKm4PI));             \
-    frontColor += attenuation * depth * scaledLength;                               \
-}                                                                                   \
+half4 ComputeAtmosphere(float3 localPos, float3 camPos)
+{
+    float3 pos = localPos * _OuterRadius;
+    ATMOSPHERICS_SETUP
+    float startAngle = dot(ray, start) / _OuterRadius;
+    float startOffset = exp(-1.0 / _ScaleDepth) * Scale(startAngle);
+    ATMOSPHERICS_LOOP_START
+    float lightAngle = dot(_LightPos, samplePoint) / height;
+    float camAngle = dot(ray, samplePoint) / height;
+    float scatter = mad(Scale(lightAngle) - Scale(camAngle), depth, startOffset);
+    ATMOSPHERICS_LOOP_END
+    float fCos = dot(_LightPos, normalize(camPos - pos));
+    float fCos2 = fCos * fCos;
+    float c0 = _InvWavelength * _KrESun * RayleighPhase(fCos2);
+    float c1 = _KmESun * MiePhase(fCos, fCos2, _G, _G2);
+    float3 col = frontColor * (c0 + c1);
+    col = 1.0 - exp(col * -_HdrExposure);
+    return float4(col, col.b);
+}
 
 #endif // ATMOSPHERICS_INCLUDE_
