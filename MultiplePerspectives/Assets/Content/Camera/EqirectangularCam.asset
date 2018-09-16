@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc0f0625d490164c898ba686032b312, type: 3}
+  m_Name: EqirectangularCam
+  m_EditorClassIdentifier: 
+  nearClip: 0.5
+  farClip: 1.5
+  panSensitivity: 2
+  zoomSensitivity: 0.1
+  zoomSmoothing: 0.15
+  antialiasing: 0
+  orthoSize: 0.5
+  tightBound: 1
+  minZoom: 0.25
+  maxZoom: 2.5

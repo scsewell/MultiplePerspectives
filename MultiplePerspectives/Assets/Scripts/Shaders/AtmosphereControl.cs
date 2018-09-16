@@ -5,7 +5,12 @@
 public class AtmosphereControl : MonoBehaviour
 {
     [SerializeField]
-    private PlanetConfig m_config;
+    private PlanetConfig m_planet;
+    public PlanetConfig Planet
+    {
+        get { return m_planet; }
+        set { m_planet = value; }
+    }
 
     private Renderer m_renderer;
     private Renderer Renderer
@@ -22,9 +27,9 @@ public class AtmosphereControl : MonoBehaviour
     
     private void OnWillRenderObject()
     {
-        if (m_config)
+        if (Planet)
         {
-            m_config.ApplyTo(Renderer, Camera.current);
+            Planet.ApplyTo(Renderer, Camera.current);
         }
     }
 }

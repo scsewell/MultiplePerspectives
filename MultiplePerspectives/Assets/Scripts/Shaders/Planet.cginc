@@ -22,16 +22,43 @@ half _PlanetCloudVelocityScale;
 float _PlanetCloudTimeScale;
 float _PlanetCloudSamples;
 
+half4 sam(sampler2D tex, float2 uv)
+{
+#if defined(CLAMP_UV)
+    float2 gradu = float2(ddx(uv.x), ddy(uv.x));
+    float2 gradv = float2(ddx(uv.y), ddy(uv.y));
+
+    const float gradientTreshold = 0.9;
+    const float mipScale = 0.9;
+
+    UNITY_FLATTEN
+    if (length(gradu) > gradientTreshold)
+    {
+        gradu = normalize(gradu) * 0.001;
+    }
+
+    UNITY_FLATTEN
+    if (length(gradv) > gradientTreshold)
+    {
+        gradv = normalize(gradv) * 0.001;
+    }
+
+    return tex2Dgrad(tex, uv, gradu, gradv);
+#else
+    return tex2D(tex, uv);
+#endif
+}
+
 half3 GetPlanetDiffuse(float2 uv)
 {
-    return tex2D(_PlanetDiffuse, uv).rgb;
+    return sam(_PlanetDiffuse, uv).rgb;
 }
 
 half3 GetPlanetSpecular(float2 uv, float3 localPos, float3 camPos, float3 normal)
 {
     float3 viewDir = normalize(camPos - localPos);
     float nh = max(0, dot(normal, normalize(_LightPos + viewDir)));
-    return _PlanetSpecularColor * tex2D(_PlanetSpecular, uv).r * pow(nh, _PlanetGlossiness * 128.0);
+    return _PlanetSpecularColor * sam(_PlanetSpecular, uv).r * pow(nh, _PlanetGlossiness * 128.0);
 }
 
 half3 GetPlanetClouds(float2 uv)
@@ -46,13 +73,13 @@ half3 GetPlanetClouds(float2 uv)
     {
         // move the position one step using the vector field
         float2 lastPos = currentPos;
-        currentPos += (tex2D(_PlanetCloudVelocity, currentPos + timeOffset).rg - 0.5) * _PlanetCloudVelocityScale;
+        currentPos += (sam(_PlanetCloudVelocity, currentPos + timeOffset).rg - 0.5) * _PlanetCloudVelocityScale;
 
         // get the point along the way from the last sample to use
         float2 samplePos = lerp(lastPos, currentPos, t);
 
         // sample the texture and weight the contribution
-        half sample = tex2D(_PlanetClouds, samplePos + timeOffset).r;
+        half sample = sam(_PlanetClouds, samplePos + timeOffset).r;
         half weight = -mad(abs(0.5 - ((s + t) / sampleCount)), 2.0, -1.0);
         clouds += sample * weight;
     }
@@ -61,7 +88,7 @@ half3 GetPlanetClouds(float2 uv)
 
 half3 GetCityLights(float2 uv, float3 normal, half cloudStrengh)
 {
-    half3 lights = _PlanetLightsColor * tex2D(_PlanetLights, uv).r;
+    half3 lights = _PlanetLightsColor * sam(_PlanetLights, uv).r;
     half lightStrength = saturate((dot(-normal, _LightPos) + 0.025) * 2);
     half clearSky = saturate(1.0 - (cloudStrengh * 2.0));
     return lights * lightStrength * clearSky;

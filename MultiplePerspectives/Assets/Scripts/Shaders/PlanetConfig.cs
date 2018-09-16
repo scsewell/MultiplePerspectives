@@ -108,7 +108,8 @@ public class PlanetConfig : ScriptableObject
     {
         Transform t = r.transform;
         Transform cam = camera.transform;
-        Transform sun = RenderSettings.sun.transform;
+        
+        Vector3 sunDir = -(RenderSettings.sun != null ? RenderSettings.sun.transform.forward : Vector3.forward);
 
         Vector3 oldScale = t.localScale;
 
@@ -133,7 +134,7 @@ public class PlanetConfig : ScriptableObject
         foreach (Material mat in r.sharedMaterials)
         {
             mat.SetVector("_CamPos", t.InverseTransformPoint(cam.position));
-            mat.SetVector("_LightPos", t.InverseTransformDirection(-sun.forward));
+            mat.SetVector("_LightPos", t.InverseTransformDirection(sunDir));
             mat.SetVector("_InvWavelength", invWaveLength);
             mat.SetVector("_ScatterScale", scatterScale);
             mat.SetVector("_FrontColorScale", frontColorScale);
