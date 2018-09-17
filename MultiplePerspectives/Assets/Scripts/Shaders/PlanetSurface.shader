@@ -37,7 +37,7 @@
 
             half3 frag(v2f i) : SV_Target
             {
-                return ComputePlanetSurfaceColor(i.uv, normalize(i.localPos), _CamPos);
+                return ComputePlanetSurfaceColor(GetUV(i.uv), normalize(i.localPos), _CamPos);
             }
             ENDCG
         }

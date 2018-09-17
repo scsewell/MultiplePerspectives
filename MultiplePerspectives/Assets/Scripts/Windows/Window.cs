@@ -19,6 +19,7 @@ public class Window
     private Mode m_mode;
     private CameraConfig m_config;
 
+    private Vector2 m_rotation = Vector2.zero;
     private Vector2 m_offset = Vector2.zero;
     private float m_targetZoom = 0.5f;
     private float m_currentZoom;
@@ -54,19 +55,53 @@ public class Window
 
     public void Update(Quaternion earthRotation)
     {
-        // handle zooming and panning
-        Vector2 mouseDisp = Input.GetKey(KeyCode.Mouse0) ? new Vector2(-Input.GetAxis("Mouse X"), -Input.GetAxis("Mouse Y")) : Vector2.zero;
-        float mouseScroll = -Input.mouseScrollDelta.y;
+        bool isFocused = true;
+        bool isOrtho = m_config is OrthoCameraConfig;
 
-        float sensitivityScale = Mathf.Lerp(0.25f, 1.0f, m_currentZoom);
-        m_targetZoom = Mathf.Clamp01(m_targetZoom + (m_config.zoomSensitivity * sensitivityScale * mouseScroll));
-        m_currentZoom = Mathf.Lerp(m_currentZoom, m_targetZoom, Time.deltaTime / m_config.zoomSmoothing);
-        m_offset += 0.01f * m_config.panSensitivity * sensitivityScale * mouseDisp;
+        if (isFocused)
+        {
+            // handle zooming and panning
+            Vector2 mouseDisp = Input.GetKey(KeyCode.Mouse0) ? new Vector2(-Input.GetAxis("Mouse X"), -Input.GetAxis("Mouse Y")) : Vector2.zero;
+            float mouseScroll = -Input.mouseScrollDelta.y;
+            
+            // transform view
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                m_rotation = Vector2.zero;
+                m_offset = Vector2.zero;
+            }
 
-        if (m_config is OrthoCameraConfig)
+            float sensitivityScale = Mathf.Lerp(0.25f, 1.0f, m_currentZoom);
+            m_targetZoom = Mathf.Clamp01(m_targetZoom + (m_config.zoomSensitivity * sensitivityScale * mouseScroll));
+            m_currentZoom = Mathf.Lerp(m_currentZoom, m_targetZoom, Time.deltaTime / m_config.zoomSmoothing);
+
+            if (isOrtho)
+            {
+                if (Input.GetKey(KeyCode.LeftControl))
+                {
+                    m_rotation += 0.01f * m_config.panSensitivity * sensitivityScale * mouseDisp;
+                }
+                else
+                {
+                    m_offset += 0.01f * m_config.panSensitivity * sensitivityScale * mouseDisp;
+                }
+            }
+            else
+            {
+                m_rotation += 0.01f * m_config.panSensitivity * sensitivityScale * mouseDisp;
+            }
+        }
+
+        // configure rendering
+        if (isOrtho)
         {
             OrthoCameraConfig c = m_config as OrthoCameraConfig;
 
+            Quaternion rotation =
+                    Quaternion.AngleAxis(-m_rotation.x * 2 * Mathf.PI * Mathf.Rad2Deg, Vector3.forward) *
+                    Quaternion.AngleAxis(m_rotation.y * Mathf.PI * Mathf.Rad2Deg, Vector3.right);
+
+            m_projMat.SetMatrix("_Rotation", Matrix4x4.Rotate(rotation));
             m_projMat.SetVector("_CoordOffset", m_offset);
             m_projMat.SetFloat("_Zoom", Mathf.Lerp(c.minZoom, c.maxZoom, m_currentZoom));
 
@@ -87,9 +122,9 @@ public class Window
             PerspectiveCameraConfig c = m_config as PerspectiveCameraConfig;
 
             m_cam.fieldOfView = Mathf.Lerp(c.nearFieldOfView, c.farFieldOfView, m_currentZoom);
-            m_cam.transform.rotation = 
-                Quaternion.AngleAxis(-m_offset.x * 2 * Mathf.PI * Mathf.Rad2Deg, Vector3.up) *
-                Quaternion.AngleAxis(m_offset.y * Mathf.PI * Mathf.Rad2Deg, Vector3.right);
+            m_cam.transform.rotation =
+                    Quaternion.AngleAxis(-m_rotation.x * 2 * Mathf.PI * Mathf.Rad2Deg, Vector3.up) *
+                    Quaternion.AngleAxis(m_rotation.y * Mathf.PI * Mathf.Rad2Deg, Vector3.right);
             m_cam.transform.localPosition = m_cam.transform.forward * -Mathf.Lerp(c.nearDistance, c.farDistance, m_currentZoom);
         }
     }

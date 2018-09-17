@@ -29,6 +29,7 @@
             #include "Planet.cginc"
             #include "Projection.cginc"
 
+            float4x4 _Rotation;
             float2 _CoordOffset;
             float _Zoom;
             
@@ -48,8 +49,11 @@
 
             half3 frag(v2f i) : SV_Target
             {
-                float longitude = WrapLongitudeToroidal((i.uv.x * UNITY_TWO_PI) - UNITY_PI);
-                float zenith = WrapZenithToroidal(UNITY_PI - (i.uv.y * UNITY_PI));
+                float longitude = (i.uv.x * UNITY_TWO_PI) - UNITY_PI;
+                float zenith = UNITY_PI - (i.uv.y * UNITY_PI);
+
+                longitude = WrapLongitudeAlternatingMirrorShifted(longitude, zenith);
+                zenith = WrapZenithAlternatingMirror(zenith);
 
 #if defined( _DEBUG_ON)
                 // check that the texture coords will match the point on the sphere, otherwise the lighting
@@ -60,18 +64,16 @@
                 }
 #endif
 
-                // transform the spherical coords to texture space
-                float2 texPos = float2(Wrap((longitude + UNITY_PI) / UNITY_TWO_PI, 1), Wrap((UNITY_PI - zenith) / UNITY_PI, 1));
-                
-                // transform the spherical coords to cartesian coords
-                float3 localPos = float3(
-                    sin(zenith) * cos(longitude),
-                    cos(zenith),
-                    sin(zenith) * sin(longitude)
-                );
+                float3 localPos = mul(_Rotation, SphericalToCartesian(longitude, zenith));
+                float2 rotatedSphere = CartesianToSpherical(localPos);
+                longitude = rotatedSphere.x;
+                zenith = rotatedSphere.y;
 
+                // transform the spherical coords to texture space
+                float2 texPos = float2((longitude + UNITY_PI) / UNITY_TWO_PI, (UNITY_PI - zenith) / UNITY_PI);
+                
                 // sample the planet sphere
-                return ComputePlanetSurfaceColor(frac(texPos), localPos);
+                return ComputePlanetSurfaceColor(GetUV(texPos), localPos);
             }
             ENDCG
         }

@@ -1,6 +1,25 @@
 ﻿#ifndef PROJECTION_INCLUDE_
 #define PROJECTION_INCLUDE_
 
+float3 SphericalToCartesian(float longitude, float zenith)
+{ 
+    return float3(
+        sin(zenith) * cos(longitude),
+        cos(zenith),
+        sin(zenith) * sin(longitude)
+    );
+}
+
+float3 SphericalToCartesian(float2 spherical)
+{ 
+    return SphericalToCartesian(spherical.x, spherical.y);
+}
+
+float2 CartesianToSpherical(float3 pos)
+{
+    return float2(atan2(pos.z, pos.x), acos(pos.y));
+}
+
 float LatitudeToZenith(float latitude)
 {
     return UNITY_HALF_PI - latitude;
@@ -45,11 +64,11 @@ float WrapLongitudeAlternatingMirrorShifted(float longitude, float zenith)
     UNITY_FLATTEN
     if (UNITY_PI < Wrap(zenith, UNITY_TWO_PI))
     {
-        return longitude;
+        return WrapLongitudeToroidal(longitude);
     }
     else
     {
-        return (longitude + UNITY_PI) % UNITY_TWO_PI;
+        return ((longitude % UNITY_TWO_PI) + (3.0 * UNITY_PI)) % UNITY_TWO_PI;
     }
 }
 
