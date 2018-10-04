@@ -6,28 +6,23 @@ using UnityEngine;
 public class WindowManager : MonoBehaviour
 {
     private const int MAX_WINDOWS = 16;
-
-    [Serializable]
-    private class ProjectionConfig
-    {
-        public Window.Mode mode;
-        public CameraConfig camera;
-    }
-
+    
     [SerializeField]
     private GameObject m_windowPrefab;
-
     [SerializeField]
-    private PlanetConfig m_defaultPlanet;
-
-    [SerializeField]
-    private Transform m_earthRotation;
+    private WindowUI m_windowUIPrefab;
 
     [SerializeField]
     private ProjectionConfig[] m_projectionConfigs;
-    
+
+    [SerializeField]
+    private PlanetConfig m_defaultPlanet;
+    [SerializeField]
+    private Transform m_earthRotation;
+
     private readonly Dictionary<Window.Mode, CameraConfig> m_modeToCamera = new Dictionary<Window.Mode, CameraConfig>();
     private readonly List<Window> m_windows = new List<Window>();
+    private Transform m_uiParent;
 
     private void Awake()
     {
@@ -35,6 +30,8 @@ public class WindowManager : MonoBehaviour
         {
             m_modeToCamera.Add(config.mode, config.camera);
         }
+
+        m_uiParent = GetComponentInChildren<Canvas>(true).transform;
 
         CreateWindow(Window.Mode.Globe);
     }
@@ -59,8 +56,15 @@ public class WindowManager : MonoBehaviour
         {
             if (!m_windows.Any(w => w.windowID == i))
             {
-                GameObject instance = Instantiate(m_windowPrefab);
-                Window w = new Window(i, instance.GetComponent<Camera>(), instance.GetComponentInChildren<MeshRenderer>());
+                GameObject window = Instantiate(m_windowPrefab);
+                WindowUI ui = Instantiate(m_windowUIPrefab, m_uiParent, true);
+                
+                Window w = new Window(i,
+                    window.GetComponent<Camera>(),
+                    window.GetComponentInChildren<MeshRenderer>(),
+                    ui
+                );
+
                 w.SetMode(mode, m_modeToCamera[mode]);
                 w.SetPlanet(m_defaultPlanet);
                 m_windows.Add(w);

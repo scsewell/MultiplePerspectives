@@ -15,6 +15,7 @@ public class Window
     private Camera m_cam;
     private PostProcessLayer m_postProcessing;
     private GameObject m_quad;
+    private WindowUI m_ui;
     private Material m_projMat;
     private Mode m_mode;
     private CameraConfig m_config;
@@ -29,9 +30,13 @@ public class Window
     public Rect Rect => m_cam.rect;
     public Mode CurrentMode => m_mode;
 
-    public Window(int id, Camera cam, MeshRenderer quad)
+    public Window(int id, Camera cam, MeshRenderer quad, WindowUI ui)
     {
         windowID = id;
+
+        // setup window UI
+        m_ui = ui;
+        m_ui.name = "WindowIO-" + id;
 
         // add a camera for this window
         m_cam = cam;
@@ -49,7 +54,7 @@ public class Window
         m_quad.layer = id + LAYER_OFFSET;
         m_projMat = m_quad.GetOrAddComponent<Renderer>().material;
         m_quad.GetOrAddComponent<AtmosphereControl>();
-
+        
         m_currentZoom = m_targetZoom;
     }
 
@@ -69,6 +74,8 @@ public class Window
             {
                 m_rotation = Vector2.zero;
                 m_offset = Vector2.zero;
+                m_targetZoom = 0.5f;
+                m_currentZoom = m_targetZoom;
             }
 
             float sensitivityScale = Mathf.Lerp(0.25f, 1.0f, m_currentZoom);
